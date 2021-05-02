@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 ## Task 0.1
 ## Mathematical operators
@@ -12,6 +13,9 @@ def mul(x, y):
 def id(x):
     ":math:`f(x) = x`"
     return x
+
+
+1
 
 
 def add(x, y):
@@ -103,8 +107,7 @@ def log_back(a, b):
 
 def inv(x):
     ":math:`f(x) = 1/x`"
-    sign = 1 if x >= 0 else -1
-    return 1.0 / (x + sign * EPS)
+    return 1.0 / (x + np.sign(x) * EPS)
 
 
 def inv_back(a, b):

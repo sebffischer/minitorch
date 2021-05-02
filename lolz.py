@@ -1,13 +1,22 @@
-import torch
+import numpy as np
 
-x = torch.tensor(1.0)
-x._requires_grad = True
 
-y1 = torch.tensor(2.0)
-y2 = torch.tensor(3.0)
+def f(arr):
+    arr[0] = 100
+    return None
 
-l1 = x * y1
-l2 = x * y2
 
-l1.backward()
-l2.backward()
+arr = np.array([1, 2, 3])
+
+f(arr)
+print(arr)
+
+
+def g(x):
+    x += 1
+
+
+x = 10
+print(x)
+g(x)
+print(x)
