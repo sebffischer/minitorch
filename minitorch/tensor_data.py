@@ -52,7 +52,9 @@ def count(position, shape, out_index):
     # So
     for i in range(len(shape)):
         step_size = prod(shape[(i + 1) :])
-        out_index[i] = out_index[i]
+        steps = position % step_size
+        position -= steps * step_size
+        out_index[i] = steps
 
     return None
 

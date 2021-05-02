@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+setup.py
+minitorch/__init__.py
+minitorch/autodiff.py
+minitorch/lolz.py
+minitorch/module.py
+minitorch/operators.py
+minitorch/scalar.py
+minitorch/tensor.py
+minitorch/tensor_data.py
+minitorch/tensor_functions.py
+minitorch/tensor_ops.py
+minitorch.egg-info/PKG-INFO
+minitorch.egg-info/SOURCES.txt
+minitorch.egg-info/dependency_links.txt
+minitorch.egg-info/top_level.txt
