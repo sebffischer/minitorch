@@ -1,0 +1,15 @@
+strict digraph  {
+y;
+"Mul (Op 0)";
+h1;
+"constant 20";
+"Add (Op 1)";
+x;
+"constant 10.0";
+"Mul (Op 0)" -> y;
+h1 -> "Mul (Op 0)";
+"constant 20" -> "Mul (Op 0)";
+"Add (Op 1)" -> h1;
+x -> "Add (Op 1)";
+"constant 10.0" -> "Add (Op 1)";
+}
