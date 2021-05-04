@@ -2,7 +2,7 @@ import minitorch
 import pytest
 from hypothesis import given
 from hypothesis.strategies import floats, lists
-from .strategies import tensors, shaped_tensors, assert_close
+from strategies import tensors, shaped_tensors, assert_close
 
 small_floats = floats(min_value=-100, max_value=100, allow_nan=False)
 
@@ -113,7 +113,7 @@ def test_reduce_forward_one_dim():
     # shape (3, 2)
     t = minitorch.tensor_fromlist([[2, 3], [4, 6], [5, 7]])
 
-    # here 0 means to reduce the 0th dim, 3 -> 1 
+    # here 0 means to reduce the 0th dim, 3 -> 1
     t_summed = t.sum(0)
 
     # shape (1, 2)
@@ -128,7 +128,7 @@ def test_reduce_forward_one_dim_2():
     # shape (3, 2)
     t = minitorch.tensor_fromlist([[2, 3], [4, 6], [5, 7]])
 
-    # here 1 means reduce the 1st dim, 2 -> 1 
+    # here 1 means reduce the 1st dim, 2 -> 1
     t_summed_2 = t.sum(1)
 
     # shape (3, 1)
