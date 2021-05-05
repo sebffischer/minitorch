@@ -41,15 +41,6 @@ def count(position, shape, out_index):
     Returns:
       None : Fills in `out_index`.
     """
-    # Assume we have shape (3, 4, 2) and position 7.
-    # The mapping is unique if we simply make it increasing in d1, d2, d3...
-    # Moving once completely along the first dimension would corrspond to 8 positions
-    # --> (7 + 1) %
-    # Basically to get the first index we need to get how often 4 * 2
-    # fits into (position + 1). Then in order to get the second position we need
-    # to figure out how often 2 fits into the remainder of the previous operation
-    # Then the remainder givers us the last index
-    # So
     for i in range(len(shape)):
         step_size = prod(shape[(i + 1) :])
         steps = position // step_size

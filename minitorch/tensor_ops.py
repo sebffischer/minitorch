@@ -29,8 +29,18 @@ def tensor_map(fn):
     """
 
     def _map(out, out_shape, out_strides, in_storage, in_shape, in_strides):
-        # TODO: Implement for Task 2.2.
-        raise NotImplementedError('Need to implement for Task 2.2')
+        assert (in_shape == out_shape).all()
+        index = np.empty_like(in_shape)
+        for i in range(len(in_storage)):
+            count(
+                i, in_shape, index
+            )  # loops over all indinces (0, 0, 0), (0, 0, 1) ...
+
+            in_position = index_to_position(index, in_strides)
+            out_position = index_to_position(index, out_strides)
+            out[out_position] = fn(in_storage[in_position])
+
+        return None
 
     return _map
 
@@ -58,7 +68,7 @@ def map(fn):
     def ret(a, out=None):
         if out is None:
             out = a.zeros(a.shape)
-        f(*out.tuple(), *a.tuple())
+        f(*out.tuple(), *a.tuple())  # tuple returns storage, shape, stride
         return out
 
     return ret
@@ -70,9 +80,7 @@ def tensor_zip(fn):
 
       fn_zip = tensor_zip(fn)
       fn_zip(out, ...)
-
-
-    Args:
+    Args: 
         fn: function mapping two floats to float to apply
         out (array): storage for `out` tensor
         out_shape (array): shape for `out` tensor
@@ -99,8 +107,14 @@ def tensor_zip(fn):
         b_shape,
         b_strides,
     ):
-        # TODO: Implement for Task 2.2.
-        raise NotImplementedError('Need to implement for Task 2.2')
+        assert out_shape == a_shape == b_shape
+        index = np.empty_like(a_shape)
+        for i in range(len(a_storage)):
+            count(i, a_shape, index)
+            a_position = index_to_position(index, a_strides)
+            b_position = index_to_position(index, b_strides)
+            out_position = index_to_position(index, out_strides)
+            out[out_position] = fn(a_storage[a_position], b_storage[b_position])
 
     return _zip
 
@@ -167,8 +181,21 @@ def tensor_reduce(fn):
         reduce_shape,
         reduce_size,
     ):
-        # TODO: Implement for Task 2.2.
-        raise NotImplementedError('Need to implement for Task 2.2')
+        assert (
+            (np.array(out_shape) * np.array(reduce_shape)) == np.array(a_shape)
+        ).all()
+        index = np.empty_like(out_shape)  # actual index
+        out_index = np.empty_like(out_shape)  # 1s at the reduce dim
+        reduce_index = np.empty_like(out_shape)  # 1s at the non-reduced dims
+
+        for i in range(len(out)):  # outer loop
+            count(i, out_shape, out_index)
+            out_pos = index_to_position(out_index, out_strides)
+            for j in range(reduce_size):  # inner loop over dims where to apply reduce
+                count(j, reduce_shape, reduce_index)
+                reduce_pos = index_to_position(reduce_index, a_strides)
+                index[:] = out_index * reduce_index  # with [:] we keep the memory loc
+                out[out_index] = fn(out[out_pos], a_storage[reduce_pos])
 
     return _reduce
 
@@ -178,7 +205,7 @@ def reduce(fn, start=0.0):
     Higher-order tensor reduce function. ::
 
       fn_reduce = reduce(fn)
-      reduced = fn_reduce(a, dims)
+    reduced = fn_reduce(a, dims)
 
 
     Args:
