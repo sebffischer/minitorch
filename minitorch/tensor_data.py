@@ -1,4 +1,6 @@
 import random
+
+from numpy.lib.function_base import kaiser
 from .operators import prod
 from numpy import array, float64, ndarray
 import numba
@@ -85,8 +87,25 @@ def shape_broadcast(shape1, shape2):
     Raises:
         IndexingError : if cannot broadcast
     """
-    # TODO: Implement for Task 2.4.
-    raise NotImplementedError("Need to implement for Task 2.4")
+    # (2, 3, 4, 7) and (3, 4, 1)
+    # add ones
+    # --> (3, 4, 5, 7) and (1, 3, 4, 1)
+    # -> afterwards check that if the values don't align, at least one of them
+    # is one
+    if len(shape1) > len(shape2):
+        shape2 = tuple([1] * (len(shape1) - len(shape2))) + shape2
+    elif len(shape1) < len(shape2):
+        shape1 = tuple([1] * (len(shape2) - len(shape1))) + shape1
+    valid_broadcast = True
+    for x, y in zip(shape1, shape2):
+        if not (x == 1 | y == 1 | x == y):
+            valid_broadcast = False
+            continue
+
+    if not valid_broadcast:
+        raise IndexingError
+
+    return tuple((max(x, y) for x, y in zip(shape1, shape2)))
 
 
 def strides_from_shape(shape):

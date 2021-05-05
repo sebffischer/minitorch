@@ -40,6 +40,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
     # Maps
     neg_map = tensor_ops.map(operators.neg)
     sigmoid_map = tensor_ops.map(operators.sigmoid)
+    sigmoid_back_map = tensor_ops.map(operators.sigmoid_back)
     relu_map = tensor_ops.map(operators.relu)
     log_map = tensor_ops.map(operators.log)
     exp_map = tensor_ops.map(operators.exp)
@@ -114,8 +115,8 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError("Need to implement for Task 2.3")
+                a = ctx.saved_values
+                return mul_zip(sigmoid_back_map(a), grad_output)
 
         class ReLU(Function):
             @staticmethod
@@ -136,8 +137,8 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError("Need to implement for Task 2.3")
+                a = ctx.saved_values
+                return mul_zip(log_back_zip(a), grad_output)
 
         class Exp(Function):
             @staticmethod
@@ -147,8 +148,8 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError("Need to implement for Task 2.3")
+                a = ctx.saved_values
+                return mul_zip(exp_map(a), grad_output)
 
         class Sum(Function):
             @staticmethod
@@ -168,8 +169,8 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
                     out._tensor._storage[:] = grad_output[0]
                     return out
                 else:
-                    return grad_output
-                # END Code Update
+                    return grad_output  # this can always be braodcast, expanding
+                # explicitly would be a waste of memory
 
         class Mean(Function):
             @staticmethod
@@ -183,14 +184,24 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
                 n = operators.prod([a.shape[i] for i in dim])
 
                 ctx.save_for_backward(n, a.shape, dim)
-                x._tensor[:] /= n
+                x._tensor._storage[:] /= n
 
                 return x
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError("Need to implement for Task 2.3")
+                # Like the backward pass for sum, the expanded dimensions are not
+                # created explicitly
+                n, a_shape, dim = ctx.saved_values
+                if dim is None:
+                    out = grad_output.zeros(a_shape)
+                    out._tensor._storage[:] = grad_output[0] / n
+                    return out
+                else:
+                    out = grad_output
+                    out._tensor._storage[:] /= n
+
+                return out
 
         class LT(Function):
             @staticmethod
@@ -199,8 +210,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError("Need to implement for Task 2.3")
+                return grad_output.zeros(grad_output.shape)
 
         class EQ(Function):
             @staticmethod
@@ -209,8 +219,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError("Need to implement for Task 2.3")
+                return grad_output.zeros(grad_output.shape)
 
         class Permute(Function):
             @staticmethod
