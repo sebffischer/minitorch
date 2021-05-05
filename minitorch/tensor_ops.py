@@ -107,7 +107,9 @@ def tensor_zip(fn):
         b_shape,
         b_strides,
     ):
-        assert out_shape == a_shape == b_shape
+        # need to convert to tuple because it can be array where the quality
+        # is tested elementwise
+        assert tuple(out_shape) == tuple(a_shape) == tuple(b_shape)
         index = np.empty_like(a_shape)
         for i in range(len(a_storage)):
             count(i, a_shape, index)
@@ -185,17 +187,17 @@ def tensor_reduce(fn):
             (np.array(out_shape) * np.array(reduce_shape)) == np.array(a_shape)
         ).all()
         index = np.empty_like(out_shape)  # actual index
-        out_index = np.empty_like(out_shape)  # 1s at the reduce dim
-        reduce_index = np.empty_like(out_shape)  # 1s at the non-reduced dims
+        out_index = np.empty_like(out_shape)  # 0s at the reduce dim
+        reduce_index = np.empty_like(out_shape)  # 0s at the non-reduced dims
 
         for i in range(len(out)):  # outer loop
             count(i, out_shape, out_index)
             out_pos = index_to_position(out_index, out_strides)
             for j in range(reduce_size):  # inner loop over dims where to apply reduce
                 count(j, reduce_shape, reduce_index)
-                reduce_pos = index_to_position(reduce_index, a_strides)
-                index[:] = out_index * reduce_index  # with [:] we keep the memory loc
-                out[out_index] = fn(out[out_pos], a_storage[reduce_pos])
+                index[:] = out_index + reduce_index  # with [:] we keep the memory loc
+                pos = index_to_position(index, a_strides)
+                out[out_pos] = fn(out[out_pos], a_storage[pos])
 
     return _reduce
 

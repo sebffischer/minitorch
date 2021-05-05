@@ -4,7 +4,7 @@ Implementation of the autodifferentiation Functions for Tensor.
 
 
 from .autodiff import FunctionBase
-from .tensor_ops import TensorOps
+from .tensor_ops import TensorOps  # acces to zip, map and reduce
 import numpy as np
 from . import operators
 from .tensor import Tensor
@@ -57,9 +57,11 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
 
     # Reduce
     add_reduce = tensor_ops.reduce(operators.add)
+    # TODO why are the names t1, t2 vs. a and b (?)
 
     class Backend:
         cuda = is_cuda
+        # Why is id_map and add_reduce here again?
         _id_map = id_map
         _add_reduce = add_reduce
 
@@ -86,6 +88,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
         class Add(Function):
             @staticmethod
             def forward(ctx, t1, t2):
+                ctx.save_for_backward(t1, t2)
                 return add_zip(t1, t2)
 
             @staticmethod
@@ -94,58 +97,58 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
 
         class Mul(Function):
             @staticmethod
-            def forward(ctx, a, b):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+            def forward(ctx, t1, t2):
+                ctx.save_for_backward(t1, t2)
+                return mul_zip(t1, t2)  # zip  returnsa new tensor
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                t1, t2 = ctx.saved_values
+                return t2 * grad_output, t1 * grad_output
 
         class Sigmoid(Function):
             @staticmethod
             def forward(ctx, a):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+                ctx.save_for_backward(a)
+                return sigmoid_map(a)
 
             @staticmethod
             def backward(ctx, grad_output):
                 # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                raise NotImplementedError("Need to implement for Task 2.3")
 
         class ReLU(Function):
             @staticmethod
             def forward(ctx, a):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+                ctx.save_for_backward(a)
+                return relu_map(a)
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                a = ctx.saved_values
+                return relu_back_zip(a, grad_output)
 
         class Log(Function):
             @staticmethod
             def forward(ctx, a):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+                ctx.save_for_backward(a)
+                return log_map(a)
 
             @staticmethod
             def backward(ctx, grad_output):
                 # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                raise NotImplementedError("Need to implement for Task 2.3")
 
         class Exp(Function):
             @staticmethod
             def forward(ctx, a):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+                ctx.save_for_backward(a)
+                return exp_map(a)
 
             @staticmethod
             def backward(ctx, grad_output):
                 # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                raise NotImplementedError("Need to implement for Task 2.3")
 
         class Sum(Function):
             @staticmethod
@@ -171,46 +174,55 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
         class Mean(Function):
             @staticmethod
             def forward(ctx, a, dim):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+                if dim is not None:
+                    x = add_reduce(a, [dim])
+                else:
+                    dim = list(range(a.dims))
+                    x = add_reduce(a, dim).view(1)
+
+                n = operators.prod([a.shape[i] for i in dim])
+
+                ctx.save_for_backward(n, a.shape, dim)
+                x._tensor[:] /= n
+
+                return x
 
             @staticmethod
             def backward(ctx, grad_output):
                 # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                raise NotImplementedError("Need to implement for Task 2.3")
 
         class LT(Function):
             @staticmethod
             def forward(ctx, a, b):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+                return lt_zip(a, b)
 
             @staticmethod
             def backward(ctx, grad_output):
                 # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                raise NotImplementedError("Need to implement for Task 2.3")
 
         class EQ(Function):
             @staticmethod
             def forward(ctx, a, b):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+                return eq_zip(a, b)
 
             @staticmethod
             def backward(ctx, grad_output):
                 # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                raise NotImplementedError("Need to implement for Task 2.3")
 
         class Permute(Function):
             @staticmethod
             def forward(ctx, a, order):
-                # TODO: Implement for Task 2.2.
-                raise NotImplementedError('Need to implement for Task 2.2')
+                x = id_map(a)
+                x.shape = tuple(a.shape[i] for i in order)
+                x.stride = tuple(a.stride[i] for i in order)
 
             @staticmethod
             def backward(ctx, grad_output):
                 # TODO: Implement for Task 2.3.
-                raise NotImplementedError('Need to implement for Task 2.3')
+                raise NotImplementedError("Need to implement for Task 2.3")
 
         class View(Function):
             @staticmethod

@@ -26,3 +26,6 @@ pytest tests/test.py
 # cd into tests
 python -m pytest test.py -k taskX_Y
 ```
+
+The backend is dynamically constructed because we then have to write the code only once
+for CUDA and CPU ops (make_tensor-\_backend in tensor_functions.py)

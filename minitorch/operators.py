@@ -15,9 +15,6 @@ def id(x):
     return x
 
 
-1
-
-
 def add(x, y):
     ":math:`f(x, y) = x + y`"
     return x + y
