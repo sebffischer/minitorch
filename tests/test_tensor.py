@@ -123,6 +123,9 @@ def test_reduce_forward_one_dim():
         assert_close(t_summed[ind], t_sum_expected[ind])
 
 
+test_reduce_forward_one_dim()
+
+
 @pytest.mark.task2_2
 def test_reduce_forward_one_dim_2():
     # shape (3, 2)
