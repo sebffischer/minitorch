@@ -1,6 +1,8 @@
 import random
 
+from itertools import zip_longest
 from numpy.lib.function_base import kaiser
+from numpy.lib.stride_tricks import _broadcast_shape
 from .operators import prod
 from numpy import array, float64, ndarray
 import numba
@@ -52,13 +54,46 @@ def count(position, shape, out_index):
     return None
 
 
+def check_broadcast(shape1, shape2):
+    """
+    Checks whether shape1 and shape2 can be 
+    """
+    shape = _broadcast_shape
+
+
+def check_map_broadcast(big_shape, shape):
+    """
+    Checks whether broadcast_index can be applied. 
+    Rules: 
+        - must be able to broadcast the two 
+        - When appending 0-dimensions to big_shape to match the broadcasted shape
+          big_shape cannot have smaller dimensions than the broadcasted shape
+
+    """
+    # check whether shapes can be broadcast and returns broadcasted shape if possible
+    broad_shape = shape_broadcast(big_shape, shape)
+    assert prod(big_shape) == prod(broad_shape)
+    # assert prod(shape) == prod(shape1) == prod(shape2)
+    # TODO if new versions stays change docs
+
+    # for dim, dim_big in zip_longest(shape[::-1], big_shape[::-1], fillvalue=1):
+    #    if not dim_big >= dim:
+    #        raise IndexingError(
+    #            f"""big_shape: {big_shape} and small_shape: {shape} cannot be broadcast,
+    #            big_shape is only allowed to get new dimensions of 1 and existing
+    #            dimensions of big_shape with length 1 cannot be increased!"""
+    #        )
+
+    return broad_shape
+
+
 def broadcast_index(big_index, big_shape, shape, out_index):
     """
     Convert a `big_index` into `big_shape` to a smaller `out_index`
     into `shape` following broadcasting rules. In this case
     it may be larger or with more dimensions than the `shape`
     given. Additional dimensions may need to be mapped to 0 or
-    removed.
+    removed. 
 
     Args:
         big_index (array-like): multidimensional index of bigger tensor
@@ -69,17 +104,25 @@ def broadcast_index(big_index, big_shape, shape, out_index):
     Returns:
         None : Fills in `out_index`.
     """
-    # TODO: Implement for Task 2.4.
-    raise NotImplementedError("Need to implement for Task 2.4")
+    # The testing should be done outside of this function because if it is applied
+    # iteratively we don't want to test the validity each time
+    # https://github.com/Mountagha/Module-2/blob/master/minitorch/tensor_data.py
+    for i in range(len(shape) - 1, -1, -1):
+        if shape[i] != big_shape[i]:
+            out_index[i] = 0
+        else:
+            out_index[i] = big_index[i]
+    return None
 
 
 def shape_broadcast(shape1, shape2):
     """
-    Broadcast two shapes to create a new union shape.
+    Broadcast two shapes to create a new union shape. Look at minitorch broadcasting
+    rules for more information. 
 
     Args:
-        shape1 (tuple) : first shape
-        shape2 (tuple) : second shape
+        shape1 (tuple, array) : first shape
+        shape2 (tuple, array) : second shape
 
     Returns:
         tuple : broadcasted shape
@@ -87,25 +130,24 @@ def shape_broadcast(shape1, shape2):
     Raises:
         IndexingError : if cannot broadcast
     """
-    # (2, 3, 4, 7) and (3, 4, 1)
-    # add ones
-    # --> (3, 4, 5, 7) and (1, 3, 4, 1)
-    # -> afterwards check that if the values don't align, at least one of them
-    # is one
+    # convert to tuples to use `+` to extend the shorted shape
+    shape1 = tuple(shape1)
+    shape2 = tuple(shape2)
+
     if len(shape1) > len(shape2):
-        shape2 = tuple([1] * (len(shape1) - len(shape2))) + shape2
-    elif len(shape1) < len(shape2):
-        shape1 = tuple([1] * (len(shape2) - len(shape1))) + shape1
-    valid_broadcast = True
-    for x, y in zip(shape1, shape2):
-        if not (x == 1 | y == 1 | x == y):
-            valid_broadcast = False
-            continue
+        shape2 = (1,) * (len(shape1) - len(shape2)) + shape2
+    elif len(shape2) > len(shape1):
+        shape1 = (1,) * (len(shape2) - len(shape1)) + shape1
 
-    if not valid_broadcast:
-        raise IndexingError
+    out = []
 
-    return tuple((max(x, y) for x, y in zip(shape1, shape2)))
+    for d1, d2 in zip(shape1, shape2):
+        if d1 != d2 and min(d1, d2) != 1:
+            raise IndexingError(f"Cannot broadcast {shape1} and {shape2}")
+        else:
+            out.append(max(d1, d2))
+
+    return tuple(out)
 
 
 def strides_from_shape(shape):

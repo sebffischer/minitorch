@@ -3,8 +3,8 @@ from hypothesis import settings
 from hypothesis.strategies import composite, floats, integers, lists
 import numpy as np
 
-settings.register_profile("ci", deadline=None)
-settings.load_profile("ci")
+# settings.register_profile("#ci", deadline=None, print_blob=True)
+# settings.load_profile("ci")
 
 
 small_ints = integers(min_value=1, max_value=3)

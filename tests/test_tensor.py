@@ -1,10 +1,11 @@
 import minitorch
 import pytest
-from hypothesis import given
+from hypothesis import given, reproduce_failure, settings
 from hypothesis.strategies import floats, lists
-from strategies import tensors, shaped_tensors, assert_close
+from .strategies import tensors, shaped_tensors, assert_close
 
 small_floats = floats(min_value=-100, max_value=100, allow_nan=False)
+
 
 v = 4.524423
 one_arg = [
@@ -47,6 +48,7 @@ def test_create(t1):
 @pytest.mark.task2_2
 @pytest.mark.parametrize("fn", one_arg)
 def test_one_args(fn, t1):
+    # breakpoint()
     t2 = fn[1](t1)
     for ind in t2._tensor.indices():
         assert_close(t2[ind], fn[1](minitorch.Scalar(t1[ind])).data)
@@ -74,6 +76,7 @@ def test_one_derivative(fn, t1):
 @given(tensors())
 @pytest.mark.task2_3
 @pytest.mark.parametrize("fn", reduce)
+# @reproduce_failure("6.10.1", b"AXicY2RkQAcAADgAAw==")
 def test_reduce(fn, t1):
     minitorch.grad_check(fn[1], t1)
 
@@ -89,7 +92,9 @@ def test_two_grad(fn, ts):
 @given(shaped_tensors(2))
 @pytest.mark.task2_4
 @pytest.mark.parametrize("fn", two_arg)
+# @reproduce_failure("6.10.1", b"AXicY2RkIBUAAACYAAM=")
 def test_two_grad_broadcast(fn, ts):
+    breakpoint()
     t1, t2 = ts
     minitorch.grad_check(fn[1], t1, t2)
 

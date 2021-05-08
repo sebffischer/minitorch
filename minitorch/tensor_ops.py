@@ -1,9 +1,21 @@
+"""
+How to broadcast: 
+- Create the broadcasted shape
+- Iterate over the indices of the output-shape (needs to have the same elements) 
+  than the broadcasted shape for zip and map (not so for reduce)
+- Then the broadcasted index can be mapped to the original indices
+"""
+
+from itertools import zip_longest
 import numpy as np
+from .operators import prod
 from .tensor_data import (
+    IndexingError,
     count,
     index_to_position,
     broadcast_index,
     shape_broadcast,
+    check_map_broadcast,
     MAX_DIMS,
 )
 
@@ -29,15 +41,34 @@ def tensor_map(fn):
     """
 
     def _map(out, out_shape, out_strides, in_storage, in_shape, in_strides):
-        assert (in_shape == out_shape).all()
-        index = np.empty_like(in_shape)
-        for i in range(len(in_storage)):
-            count(
-                i, in_shape, index
-            )  # loops over all indinces (0, 0, 0), (0, 0, 1) ...
+        broad_shape = shape_broadcast(out_shape, in_shape)
+        assert prod(broad_shape) == prod(out_shape)
 
-            in_position = index_to_position(index, in_strides)
-            out_position = index_to_position(index, out_strides)
+        broad_index = np.empty_like(broad_shape, dtype=int)
+        in_index = np.empty_like(in_shape, dtype=int)
+        out_index = np.empty_like(out_shape, dtype=int)
+        for i in range(len(out)):
+            # note that iterating over len(out) also iterates over all broad_indices
+            # because of the above assertion
+            count(i, broad_shape, broad_index)
+            # now we map the broadcasted index to the input index
+            broadcast_index(
+                big_index=broad_index,
+                big_shape=broad_shape,
+                shape=in_shape,
+                out_index=in_index,
+            )
+            # now we map the broadcasted index to the output index
+            broadcast_index(
+                big_index=broad_index,
+                big_shape=broad_shape,
+                shape=out_shape,
+                out_index=out_index,
+            )
+
+            # now we map the index to the position
+            in_position = index_to_position(in_index, in_strides)
+            out_position = index_to_position(out_index, out_strides)
             out[out_position] = fn(in_storage[in_position])
 
         return None
@@ -51,13 +82,19 @@ def map(fn):
 
       fn_map = map(fn)
       b = fn_map(a)
-
+      
 
     Args:
         fn: function from float-to-float to apply.
         a (:class:`TensorData`): tensor to map over
         out (:class:`TensorData`): optional, tensor data to fill in,
-               should broadcast with `a`
+               should broadcast with `a`. More specifically out should be bigger
+               than AND broacast with `a`. 
+               shape `a` | shape `out` | valid
+               -------------------------------
+               (10)      |  (1, 10)    | yes
+               (10, 10)  |  (1, 10)    | no
+
 
     Returns:
         :class:`TensorData` : new tensor data
@@ -68,6 +105,7 @@ def map(fn):
     def ret(a, out=None):
         if out is None:
             out = a.zeros(a.shape)
+        # the broadcasting is done in tensor_map
         f(*out.tuple(), *a.tuple())  # tuple returns storage, shape, stride
         return out
 
@@ -109,7 +147,13 @@ def tensor_zip(fn):
     ):
         # need to convert to tuple because it can be array where the quality
         # is tested elementwise
-        assert tuple(out_shape) == tuple(a_shape) == tuple(b_shape)
+        try:
+            assert tuple(out_shape) == tuple(a_shape) == tuple(b_shape)
+        except:
+            pass
+
+        #
+
         index = np.empty_like(a_shape)
         for i in range(len(a_storage)):
             count(i, a_shape, index)

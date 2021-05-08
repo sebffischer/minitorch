@@ -1,7 +1,13 @@
+from numpy import array
 import minitorch
+from minitorch.tensor_data import (
+    IndexingError,
+    shape_broadcast,
+    check_broadcast_index,
+)
 from hypothesis import given
 from hypothesis.strategies import data
-from strategies import tensor_data, indices
+from .strategies import tensor_data, indices
 import pytest
 
 
@@ -104,3 +110,30 @@ def test_shape_broadcast():
 @given(tensor_data())
 def test_string(tensor_data):
     tensor_data.to_string()
+
+
+# My own tests
+def test_shape_broadcast():
+    # Every broadcasting rule must be checked to write a good test
+
+    # both combined
+    assert shape_broadcast((4, 1), (1, 4, 5)) == (1, 4, 5)
+    assert shape_broadcast(array((4, 1)), array((1, 4, 5))) == (1, 4, 5)
+
+    with pytest.raises(IndexingError):
+        shape_broadcast((1, 4), (1, 4, 1))
+        shape_broadcast(array((1, 4)), array((1, 4, 1)))
+        shape_broadcast((3, 4), (2, 4))
+        shape_broadcast(array((3, 4)), array((2, 4)))
+
+
+def test_check_broadcast_index():
+    # TODO this is buggy and must be properly tested!
+
+    with pytest.raises(IndexingError):
+        pass
+
+
+def test_broadcast_index():
+    pass
+
