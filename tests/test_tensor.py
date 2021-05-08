@@ -11,29 +11,29 @@ v = 4.524423
 one_arg = [
     # Uncomment for task 2.4
     ("neg", lambda a: -a),
-    # ("addconstant", lambda a: a + v),
-    # ("lt", lambda a: a < v),
-    # ("subconstant", lambda a: a - v),
-    # ("mult", lambda a: 5 * a),
-    # ("div", lambda a: a / v),
-    # ("sig", lambda a: a.sigmoid()),
-    # ("log", lambda a: (a + 100000).log()),
-    # ("relu", lambda a: (a + 2).relu()),
-    # ("exp", lambda a: (a - 200).exp()),
+    ("addconstant", lambda a: a + v),
+    ("lt", lambda a: a < v),
+    ("subconstant", lambda a: a - v),
+    ("mult", lambda a: 5 * a),
+    ("div", lambda a: a / v),
+    ("sig", lambda a: a.sigmoid()),
+    ("log", lambda a: (a + 100000).log()),
+    ("relu", lambda a: (a + 2).relu()),
+    ("exp", lambda a: (a - 200).exp()),
 ]
 
 reduce = [
     # Uncomment for task 2.4
     ("sum", lambda a: a.sum()),
     ("mean", lambda a: a.mean()),
-    # ("sum2", lambda a: a.sum(0)),
-    # ("mean2", lambda a: a.mean(0)),
+    ("sum2", lambda a: a.sum(0)),
+    ("mean2", lambda a: a.mean(0)),
 ]
 two_arg = [
     # Uncomment for task 2.4
     ("add", lambda a, b: a + b),
     ("mul", lambda a, b: a * b),
-    # ("lt", lambda a, b: a < b + v),
+    ("lt", lambda a, b: a < b + v),
 ]
 
 
@@ -76,7 +76,6 @@ def test_one_derivative(fn, t1):
 @given(tensors())
 @pytest.mark.task2_3
 @pytest.mark.parametrize("fn", reduce)
-# @reproduce_failure("6.10.1", b"AXicY2RkQAcAADgAAw==")
 def test_reduce(fn, t1):
     minitorch.grad_check(fn[1], t1)
 
@@ -94,7 +93,6 @@ def test_two_grad(fn, ts):
 @pytest.mark.parametrize("fn", two_arg)
 # @reproduce_failure("6.10.1", b"AXicY2RkIBUAAACYAAM=")
 def test_two_grad_broadcast(fn, ts):
-    breakpoint()
     t1, t2 = ts
     minitorch.grad_check(fn[1], t1, t2)
 

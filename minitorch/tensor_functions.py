@@ -40,7 +40,6 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
     # Maps
     neg_map = tensor_ops.map(operators.neg)
     sigmoid_map = tensor_ops.map(operators.sigmoid)
-    sigmoid_back_map = tensor_ops.map(operators.sigmoid_back)
     relu_map = tensor_ops.map(operators.relu)
     log_map = tensor_ops.map(operators.log)
     exp_map = tensor_ops.map(operators.exp)
@@ -116,7 +115,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
             @staticmethod
             def backward(ctx, grad_output):
                 a = ctx.saved_values
-                return mul_zip(sigmoid_back_map(a), grad_output)
+                return mul_zip(grad_output, mul_zip(sigmoid_map(a), sigmoid_map(a)))
 
         class ReLU(Function):
             @staticmethod
@@ -138,7 +137,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
             @staticmethod
             def backward(ctx, grad_output):
                 a = ctx.saved_values
-                return mul_zip(log_back_zip(a), grad_output)
+                return log_back_zip(a, grad_output)
 
         class Exp(Function):
             @staticmethod
@@ -149,7 +148,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
             @staticmethod
             def backward(ctx, grad_output):
                 a = ctx.saved_values
-                return mul_zip(exp_map(a), grad_output)
+                return exp_map(a, grad_output)
 
         class Sum(Function):
             @staticmethod

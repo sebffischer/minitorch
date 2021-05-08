@@ -19,7 +19,8 @@ from .tensor_data import (
     MAX_DIMS,
 )
 
-
+# TODO check that all broadcasting is implemented in the clen fashion described
+# above and which is already used for tensor_map
 def tensor_map(fn):
     """
     Higher-order tensor map function ::
@@ -42,11 +43,17 @@ def tensor_map(fn):
 
     def _map(out, out_shape, out_strides, in_storage, in_shape, in_strides):
         broad_shape = shape_broadcast(out_shape, in_shape)
-        assert prod(broad_shape) == prod(out_shape)
+        if prod(broad_shape) != prod(out_shape):
+            raise IndexingError(
+                f"""{out_shape=} has fewer elements than {in_shape=} 
+                                after broadcasting, which is not permitted when using 
+                                map. """
+            )
 
         broad_index = np.empty_like(broad_shape, dtype=int)
         in_index = np.empty_like(in_shape, dtype=int)
         out_index = np.empty_like(out_shape, dtype=int)
+
         for i in range(len(out)):
             # note that iterating over len(out) also iterates over all broad_indices
             # because of the above assertion
@@ -105,8 +112,7 @@ def map(fn):
     def ret(a, out=None):
         if out is None:
             out = a.zeros(a.shape)
-        # the broadcasting is done in tensor_map
-        f(*out.tuple(), *a.tuple())  # tuple returns storage, shape, stride
+        f(*out.tuple(), *a.tuple())
         return out
 
     return ret
@@ -145,21 +151,43 @@ def tensor_zip(fn):
         b_shape,
         b_strides,
     ):
-        # need to convert to tuple because it can be array where the quality
-        # is tested elementwise
-        try:
-            assert tuple(out_shape) == tuple(a_shape) == tuple(b_shape)
-        except:
-            pass
+        broad_in_shape = shape_broadcast(a_shape, b_shape)
+        broad_shape = shape_broadcast(broad_in_shape, out_shape)
+        if prod(broad_shape) != prod(out_shape):
+            raise IndexingError(
+                f"""The number of elements in {out_shape=} must be 
+                                identical to the broadcasted input shape of of a 
+                                and b, which is {broad_in_shape}"""
+            )
 
-        #
+        broad_index = np.empty_like(broad_shape)
+        a_index = np.empty_like(a_shape)
+        b_index = np.empty_like(b_shape)
+        out_index = np.empty_like(out_shape)
 
-        index = np.empty_like(a_shape)
-        for i in range(len(a_storage)):
-            count(i, a_shape, index)
-            a_position = index_to_position(index, a_strides)
-            b_position = index_to_position(index, b_strides)
-            out_position = index_to_position(index, out_strides)
+        for i in range(len(out)):
+            count(i, broad_shape, broad_index)
+            broadcast_index(
+                big_index=broad_index,
+                big_shape=broad_shape,
+                shape=out_shape,
+                out_index=out_index,
+            )
+            broadcast_index(
+                big_index=broad_index,
+                big_shape=broad_shape,
+                shape=a_shape,
+                out_index=a_index,
+            )
+            broadcast_index(
+                big_index=broad_index,
+                big_shape=broad_shape,
+                shape=b_shape,
+                out_index=b_index,
+            )
+            a_position = index_to_position(a_index, a_strides)
+            b_position = index_to_position(b_index, b_strides)
+            out_position = index_to_position(out_index, out_strides)
             out[out_position] = fn(a_storage[a_position], b_storage[b_position])
 
     return _zip
