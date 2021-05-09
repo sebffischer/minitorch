@@ -2,12 +2,12 @@
 Implementation of the autodifferentiation Functions for Tensor.
 """
 
-
 from .autodiff import FunctionBase
 from .tensor_ops import TensorOps  # acces to zip, map and reduce
 import numpy as np
 from . import operators
 from .tensor import Tensor
+from .utils import wrap_tuple
 import random
 
 
@@ -115,7 +115,10 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
             @staticmethod
             def backward(ctx, grad_output):
                 a = ctx.saved_values
-                return mul_zip(grad_output, mul_zip(sigmoid_map(a), sigmoid_map(a)))
+                return mul_zip(
+                    grad_output,
+                    sigmoid_map(a) - mul_zip(sigmoid_map(a), sigmoid_map(a)),
+                )
 
         class ReLU(Function):
             @staticmethod
@@ -174,8 +177,10 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
         class Mean(Function):
             @staticmethod
             def forward(ctx, a, dim):
+                "dim is a single dimension"
                 if dim is not None:
                     x = add_reduce(a, [dim])
+                    dim = [dim]
                 else:
                     dim = list(range(a.dims))
                     x = add_reduce(a, dim).view(1)
@@ -226,11 +231,12 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
                 x = id_map(a)
                 x.shape = tuple(a.shape[i] for i in order)
                 x.stride = tuple(a.stride[i] for i in order)
+                ctx.save_for_backward(order)
 
             @staticmethod
             def backward(ctx, grad_output):
-                # TODO: Implement for Task 2.3.
-                raise NotImplementedError("Need to implement for Task 2.3")
+                order = ctx.saved_values
+                return grad_output._new(grad_output._tensor.permute(*order))
 
         class View(Function):
             @staticmethod

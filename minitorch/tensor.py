@@ -19,6 +19,13 @@ class Tensor(Variable):
     """
 
     def __init__(self, v, back=None, name=None, backend=None):
+        """
+        v (:class:`TensorData`): the tensor data storage
+        back (:class: (`History`, None)): the history
+        name (:class: (`str`, None)): name for the tensor
+        backend (:class: (`Backend`)): the backend as created dynamically by 
+            make_tensor_backend
+        """
         assert isinstance(v, TensorData)
         assert backend is not None
         super().__init__(back, name=name)

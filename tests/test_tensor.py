@@ -91,7 +91,6 @@ def test_two_grad(fn, ts):
 @given(shaped_tensors(2))
 @pytest.mark.task2_4
 @pytest.mark.parametrize("fn", two_arg)
-# @reproduce_failure("6.10.1", b"AXicY2RkIBUAAACYAAM=")
 def test_two_grad_broadcast(fn, ts):
     t1, t2 = ts
     minitorch.grad_check(fn[1], t1, t2)

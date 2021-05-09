@@ -62,7 +62,7 @@ def sigmoid(x):
     for stability.
 
     """
-    return 1.0 / (1.0 + exp(-x))
+    return 1.0 / (1.0 + math.exp(-x)) if x > 0 else math.exp(x) / (math.exp(x) + 1.0)
 
 
 def relu(x):
@@ -104,11 +104,11 @@ def log_back(a, b):
 
 def inv(x):
     ":math:`f(x) = 1/x`"
-    return 1.0 / (x + np.sign(x) * EPS)
+    return 1.0 / x
 
 
 def inv_back(a, b):
-    return -(1.0 / (a ** 2 + EPS)) * b
+    return -(1.0 / (a ** 2)) * b
 
 
 def sigmoid_back(a, b):
