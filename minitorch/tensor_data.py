@@ -1,11 +1,8 @@
 import random
 
-from itertools import zip_longest
-from numpy.lib.function_base import kaiser
-from numpy.lib.stride_tricks import _broadcast_shape
 from .operators import prod
 from numpy import array, float64, ndarray
-import numba
+from numba import njit, prange
 
 MAX_DIMS = 32
 
@@ -27,7 +24,10 @@ def index_to_position(index, strides):
     Returns:
         int : position in storage
     """
-    return int(sum([x * y for x, y in zip(index, strides)]))
+    pos = 0
+    for x, y in zip(index, strides):
+        pos += x * y
+    return pos
 
 
 def count(position, shape, out_index):
@@ -36,48 +36,18 @@ def count(position, shape, out_index):
     Should ensure that enumerating position 0 ... size of a
     tensor produces every index exactly once. It
     may not be the inverse of `index_to_position`.
-
     Args:
         position (int): current position.
         shape (tuple): tensor shape.
         out_index (array): the index corresponding to position.
-
     Returns:
       None : Fills in `out_index`.
     """
-    for i in range(len(shape)):
-        step_size = prod(shape[(i + 1) :])
-        steps = position // step_size
-        position -= steps * step_size
-        out_index[i] = steps
-
+    # position = int(position)
+    for i in range(len(out_index)):
+        out_index[i] = position % shape[i]
+        position = position // shape[i]
     return None
-
-
-def check_map_broadcast(big_shape, shape):
-    """
-    Checks whether broadcast_index can be applied. 
-    Rules: 
-        - must be able to broadcast the two 
-        - When appending 0-dimensions to big_shape to match the broadcasted shape
-          big_shape cannot have smaller dimensions than the broadcasted shape
-
-    """
-    # check whether shapes can be broadcast and returns broadcasted shape if possible
-    broad_shape = shape_broadcast(big_shape, shape)
-    assert prod(big_shape) == prod(broad_shape)
-    # assert prod(shape) == prod(shape1) == prod(shape2)
-    # TODO if new versions stays change docs
-
-    # for dim, dim_big in zip_longest(shape[::-1], big_shape[::-1], fillvalue=1):
-    #    if not dim_big >= dim:
-    #        raise IndexingError(
-    #            f"""big_shape: {big_shape} and small_shape: {shape} cannot be broadcast,
-    #            big_shape is only allowed to get new dimensions of 1 and existing
-    #            dimensions of big_shape with length 1 cannot be increased!"""
-    #        )
-
-    return broad_shape
 
 
 def broadcast_index(big_index, big_shape, shape, out_index):

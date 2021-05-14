@@ -1,16 +1,5 @@
-"""
-How to broadcast: 
-- Create the broadcasted shape
-- Iterate over the indices of the output-shape (needs to have the same elements) 
-  than the broadcasted shape for zip and map (not so for reduce)
-- Then the broadcasted index can be mapped to the original indices
-"""
-
-from itertools import zip_longest
 import numpy as np
-from .operators import prod
 from .tensor_data import (
-    IndexingError,
     count,
     index_to_position,
     broadcast_index,
@@ -18,8 +7,7 @@ from .tensor_data import (
     MAX_DIMS,
 )
 
-# TODO check that all broadcasting is implemented in the clen fashion described
-# above and which is already used for tensor_map
+
 def tensor_map(fn):
     """
     Higher-order tensor map function ::
@@ -49,27 +37,19 @@ def tensor_map(fn):
         #                                map. """
         #            )
 
-        broad_index = np.empty_like(out_shape, dtype=int)
-        in_index = np.empty_like(in_shape, dtype=int)
-        out_index = np.empty_like(out_shape, dtype=int)
+        in_index = np.empty_like(in_shape, dtype=np.int32)
+        out_index = np.empty_like(out_shape, dtype=np.int32)
 
         for i in range(len(out)):
             # note that iterating over len(out) also iterates over all broad_indices
             # because of the above assertion
-            count(i, out_shape, broad_index)
+            count(i, out_shape, out_index)
             # now we map the broadcasted index to the input index
             broadcast_index(
-                big_index=broad_index,
+                big_index=out_index,
                 big_shape=out_shape,
                 shape=in_shape,
                 out_index=in_index,
-            )
-            # now we map the broadcasted index to the output index
-            broadcast_index(
-                big_index=broad_index,
-                big_shape=out_shape,
-                shape=out_shape,
-                out_index=out_index,
             )
 
             # now we map the index to the position
@@ -150,27 +130,20 @@ def tensor_zip(fn):
         b_shape,
         b_strides,
     ):
-        broad_index = np.empty_like(out_shape)
-        a_index = np.empty_like(a_shape)
-        b_index = np.empty_like(b_shape)
-        out_index = np.empty_like(out_shape)
+        out_index = np.empty_like(out_shape, dtype=np.int32)
+        a_index = np.empty_like(a_shape, dtype=np.int32)
+        b_index = np.empty_like(b_shape, dtype=np.int32)
 
         for i in range(len(out)):
-            count(i, out_shape, broad_index)
+            count(i, out_shape, out_index)
             broadcast_index(
-                big_index=broad_index,
-                big_shape=out_shape,
-                shape=out_shape,
-                out_index=out_index,
-            )
-            broadcast_index(
-                big_index=broad_index,
+                big_index=out_index,
                 big_shape=out_shape,
                 shape=a_shape,
                 out_index=a_index,
             )
             broadcast_index(
-                big_index=broad_index,
+                big_index=out_index,
                 big_shape=out_shape,
                 shape=b_shape,
                 out_index=b_index,
@@ -178,16 +151,7 @@ def tensor_zip(fn):
             a_position = index_to_position(a_index, a_strides)
             b_position = index_to_position(b_index, b_strides)
             out_position = index_to_position(out_index, out_strides)
-            try:
-                out[out_position] = fn(a_storage[a_position], b_storage[b_position])
-            except:
-                pass
-                broadcast_index(
-                    big_index=broad_index,
-                    big_shape=out_shape,
-                    shape=b_shape,
-                    out_index=b_index,
-                )
+            out[out_position] = fn(a_storage[a_position], b_storage[b_position])
 
     return _zip
 

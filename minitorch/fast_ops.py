@@ -1,8 +1,6 @@
 import numpy as np
-from .operators import prod
 from .tensor_data import (
     count,
-    IndexingError,
     index_to_position,
     broadcast_index,
     shape_broadcast,
@@ -14,6 +12,8 @@ from numba import njit, prange
 # This code will JIT compile fast versions your tensor_data functions.
 # If you get an error, read the docs for NUMBA as to what is allowed
 # in these functions.
+# inlining means that the function is inlined at the source level to avoid
+# the overhead of a function call (is relevant if function is called often)
 count = njit(inline="always")(count)
 index_to_position = njit(inline="always")(index_to_position)
 broadcast_index = njit(inline="always")(broadcast_index)
@@ -40,35 +40,22 @@ def tensor_map(fn):
     """
 
     def _map(out, out_shape, out_strides, in_storage, in_shape, in_strides):
-        broad_shape = shape_broadcast(out_shape, in_shape)
+        in_indices = np.empty((len(out), len(in_shape)), dtype=np.int32)
+        out_indices = np.empty((len(out), len(out_shape)), dtype=np.int32)
 
-        broad_index = np.empty_like(broad_shape, dtype=int)
-        in_index = np.empty_like(in_shape, dtype=int)
-        out_index = np.empty_like(out_shape, dtype=int)
-
-        for i in pt
-        range(len(out)):
-            # note that iterating over len(out) also iterates over all broad_indices
-            # because of the above assertion
-            count(i, broad_shape, broad_index)
+        for i in prange(len(out)):
+            count(i, out_shape, out_indices[i])
             # now we map the broadcasted index to the input index
             broadcast_index(
-                big_index=broad_index,
-                big_shape=broad_shape,
+                big_index=out_indices[i],
+                big_shape=out_shape,
                 shape=in_shape,
-                out_index=in_index,
-            )
-            # now we map the broadcasted index to the output index
-            broadcast_index(
-                big_index=broad_index,
-                big_shape=broad_shape,
-                shape=out_shape,
-                out_index=out_index,
+                out_index=in_indices[i],
             )
 
             # now we map the index to the position
-            in_position = index_to_position(in_index, in_strides)
-            out_position = index_to_position(out_index, out_strides)
+            in_position = index_to_position(in_indices[i], in_strides)
+            out_position = index_to_position(out_indices[i], out_strides)
             out[out_position] = fn(in_storage[in_position])
 
     return njit(parallel=True)(_map)

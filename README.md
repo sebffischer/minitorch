@@ -1,3 +1,6 @@
+# Unclear
+- What are the scoping rules when using inline=TRUE with numba?
+
 # TODO
 
 - Check that the MAX_DIMS is asserted properly
