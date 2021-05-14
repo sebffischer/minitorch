@@ -15,7 +15,6 @@ from .tensor_data import (
     index_to_position,
     broadcast_index,
     shape_broadcast,
-    check_map_broadcast,
     MAX_DIMS,
 )
 
@@ -42,33 +41,33 @@ def tensor_map(fn):
     """
 
     def _map(out, out_shape, out_strides, in_storage, in_shape, in_strides):
-        broad_shape = shape_broadcast(out_shape, in_shape)
-        if prod(broad_shape) != prod(out_shape):
-            raise IndexingError(
-                f"""{out_shape=} has fewer elements than {in_shape=} 
-                                after broadcasting, which is not permitted when using 
-                                map. """
-            )
+        #        broad_shape = shape_broadcast(out_shape, in_shape)
+        #        if prod(broad_shape) != prod(out_shape):
+        #            raise IndexingError(
+        #                f"""{out_shape=} has fewer elements than {in_shape=}
+        #                                after broadcasting, which is not permitted when using
+        #                                map. """
+        #            )
 
-        broad_index = np.empty_like(broad_shape, dtype=int)
+        broad_index = np.empty_like(out_shape, dtype=int)
         in_index = np.empty_like(in_shape, dtype=int)
         out_index = np.empty_like(out_shape, dtype=int)
 
         for i in range(len(out)):
             # note that iterating over len(out) also iterates over all broad_indices
             # because of the above assertion
-            count(i, broad_shape, broad_index)
+            count(i, out_shape, broad_index)
             # now we map the broadcasted index to the input index
             broadcast_index(
                 big_index=broad_index,
-                big_shape=broad_shape,
+                big_shape=out_shape,
                 shape=in_shape,
                 out_index=in_index,
             )
             # now we map the broadcasted index to the output index
             broadcast_index(
                 big_index=broad_index,
-                big_shape=broad_shape,
+                big_shape=out_shape,
                 shape=out_shape,
                 out_index=out_index,
             )
@@ -151,37 +150,28 @@ def tensor_zip(fn):
         b_shape,
         b_strides,
     ):
-        broad_in_shape = shape_broadcast(a_shape, b_shape)
-        broad_shape = shape_broadcast(broad_in_shape, out_shape)
-        if prod(broad_shape) != prod(out_shape):
-            raise IndexingError(
-                f"""The number of elements in {out_shape=} must be 
-                                identical to the broadcasted input shape of of a 
-                                and b, which is {broad_in_shape}"""
-            )
-
-        broad_index = np.empty_like(broad_shape)
+        broad_index = np.empty_like(out_shape)
         a_index = np.empty_like(a_shape)
         b_index = np.empty_like(b_shape)
         out_index = np.empty_like(out_shape)
 
         for i in range(len(out)):
-            count(i, broad_shape, broad_index)
+            count(i, out_shape, broad_index)
             broadcast_index(
                 big_index=broad_index,
-                big_shape=broad_shape,
+                big_shape=out_shape,
                 shape=out_shape,
                 out_index=out_index,
             )
             broadcast_index(
                 big_index=broad_index,
-                big_shape=broad_shape,
+                big_shape=out_shape,
                 shape=a_shape,
                 out_index=a_index,
             )
             broadcast_index(
                 big_index=broad_index,
-                big_shape=broad_shape,
+                big_shape=out_shape,
                 shape=b_shape,
                 out_index=b_index,
             )
@@ -194,7 +184,7 @@ def tensor_zip(fn):
                 pass
                 broadcast_index(
                     big_index=broad_index,
-                    big_shape=broad_shape,
+                    big_shape=out_shape,
                     shape=b_shape,
                     out_index=b_index,
                 )

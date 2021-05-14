@@ -1,6 +1,7 @@
 # TODO
 
-Check that the forward and backward functions are all properly implemented
+- Check that the MAX_DIMS is asserted properly
+- Check that the forward and backward functions are all properly implemented
 
 ## Some adjustments
 
