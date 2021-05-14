@@ -54,13 +54,6 @@ def count(position, shape, out_index):
     return None
 
 
-def check_broadcast(shape1, shape2):
-    """
-    Checks whether shape1 and shape2 can be 
-    """
-    shape = _broadcast_shape
-
-
 def check_map_broadcast(big_shape, shape):
     """
     Checks whether broadcast_index can be applied. 
@@ -94,6 +87,10 @@ def broadcast_index(big_index, big_shape, shape, out_index):
     it may be larger or with more dimensions than the `shape`
     given. Additional dimensions may need to be mapped to 0 or
     removed. 
+    In the relevant situation big_index arises out of broadcasting
+    shape with another shape. This means that 
+    big_index can have additional dimensions to the left and 
+    dimensions of size > 1 where shape has dimension 1.
 
     Args:
         big_index (array-like): multidimensional index of bigger tensor
@@ -104,14 +101,13 @@ def broadcast_index(big_index, big_shape, shape, out_index):
     Returns:
         None : Fills in `out_index`.
     """
-    # The testing should be done outside of this function because if it is applied
-    # iteratively we don't want to test the validity each time
-    # https://github.com/Mountagha/Module-2/blob/master/minitorch/tensor_data.py
+    # Idea: We loop from right to left, fill
+    dif = len(big_shape) - len(shape)
     for i in range(len(shape) - 1, -1, -1):
-        if shape[i] != big_shape[i]:
+        if shape[i] != big_shape[i + dif]:
             out_index[i] = 0
         else:
-            out_index[i] = big_index[i]
+            out_index[i] = big_index[i + dif]
     return None
 
 

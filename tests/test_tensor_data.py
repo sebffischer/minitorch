@@ -3,7 +3,6 @@ import minitorch
 from minitorch.tensor_data import (
     IndexingError,
     shape_broadcast,
-    check_broadcast_index,
 )
 from hypothesis import given
 from hypothesis.strategies import data
@@ -125,15 +124,4 @@ def test_shape_broadcast():
         shape_broadcast(array((1, 4)), array((1, 4, 1)))
         shape_broadcast((3, 4), (2, 4))
         shape_broadcast(array((3, 4)), array((2, 4)))
-
-
-def test_check_broadcast_index():
-    # TODO this is buggy and must be properly tested!
-
-    with pytest.raises(IndexingError):
-        pass
-
-
-def test_broadcast_index():
-    pass
 

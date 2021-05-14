@@ -188,7 +188,16 @@ def tensor_zip(fn):
             a_position = index_to_position(a_index, a_strides)
             b_position = index_to_position(b_index, b_strides)
             out_position = index_to_position(out_index, out_strides)
-            out[out_position] = fn(a_storage[a_position], b_storage[b_position])
+            try:
+                out[out_position] = fn(a_storage[a_position], b_storage[b_position])
+            except:
+                pass
+                broadcast_index(
+                    big_index=broad_index,
+                    big_shape=broad_shape,
+                    shape=b_shape,
+                    out_index=b_index,
+                )
 
     return _zip
 

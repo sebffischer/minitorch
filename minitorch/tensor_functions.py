@@ -7,7 +7,6 @@ from .tensor_ops import TensorOps  # acces to zip, map and reduce
 import numpy as np
 from . import operators
 from .tensor import Tensor
-from .utils import wrap_tuple
 import random
 
 

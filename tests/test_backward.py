@@ -33,11 +33,3 @@ def test_exp(x):
     x1 = operators.exp_back(x, 1)
     assert_close(x0, x1)
 
-
-@pytest.mark.backward
-@given(floats(min_value=-100, max_value=100))
-def test_max(x):
-    x0 = central_difference(operators.max, x)
-    x1 = operators.test_max(x, 1)
-    assert_close(x0, x1)
-
