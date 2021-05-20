@@ -125,8 +125,27 @@ def tensor_zip(fn):
         b_shape,
         b_strides,
     ):
-        # TODO: Implement for Task 3.1.
-        raise NotImplementedError("Need to implement for Task 3.1")
+        a_indices = np.empty((len(out), len(a_shape)), dtype=np.int32)
+        b_indices = np.empty((len(out), len(b_shape)), dtype=np.int32)
+        out_indices = np.empty((len(out), len(out_shape)), dtype=np.int32)
+        for i in prange(len(out)):
+            count(i, out_shape, out_indices[i])
+            broadcast_index(
+                big_index=out_indices[i],
+                big_shape=out_shape,
+                shape=a_shape,
+                out_index=a_indices[i],
+            )
+            broadcast_index(
+                big_index=out_indices[i],
+                big_shape=out_shape,
+                shape=b_shape,
+                out_index=b_indices[i],
+            )
+            b_position = index_to_position(b_indices[i], b_strides)
+            a_position = index_to_position(a_indices[i], a_strides)
+            out_position = index_to_position(out_indices[i], out_strides)
+            out[out_position] = fn(a_storage[a_position], b_storage[b_position])
 
     return njit(parallel=True)(_zip)
 
@@ -187,8 +206,11 @@ def tensor_reduce(fn):
         reduce_shape,
         reduce_size,
     ):
-        # TODO: Implement for Task 3.1.
-        raise NotImplementedError("Need to implement for Task 3.1")
+        a_indices = np.empty((len(out), len(a_shape)), dtype=np.int32)
+        out_indices = np.empty((len(out), len(out_shape)), dtype=np.int32)
+        for i in prange(len(out)): 
+            # as long as the reduced function is commutative we can even parallelize
+            # the inner loop
 
     return njit(parallel=True)(_reduce)
 

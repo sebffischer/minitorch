@@ -29,14 +29,6 @@ def tensor_map(fn):
     """
 
     def _map(out, out_shape, out_strides, in_storage, in_shape, in_strides):
-        #        broad_shape = shape_broadcast(out_shape, in_shape)
-        #        if prod(broad_shape) != prod(out_shape):
-        #            raise IndexingError(
-        #                f"""{out_shape=} has fewer elements than {in_shape=}
-        #                                after broadcasting, which is not permitted when using
-        #                                map. """
-        #            )
-
         in_index = np.empty_like(in_shape, dtype=np.int32)
         out_index = np.empty_like(out_shape, dtype=np.int32)
 
@@ -218,6 +210,7 @@ def tensor_reduce(fn):
         reduce_shape,
         reduce_size,
     ):
+        # TODO this is still in the old style --> adjust
         assert (
             (np.array(out_shape) * np.array(reduce_shape)) == np.array(a_shape)
         ).all()

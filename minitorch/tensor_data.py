@@ -43,7 +43,10 @@ def count(position, shape, out_index):
     Returns:
       None : Fills in `out_index`.
     """
-    # position = int(position)
+    # For the fast_ops we need position = int(position)
+    # otherwise we get the "Overwrite of parallel loop index" because count is used
+    # inline
+    position = int(position)
     for i in range(len(out_index)):
         out_index[i] = position % shape[i]
         position = position // shape[i]
